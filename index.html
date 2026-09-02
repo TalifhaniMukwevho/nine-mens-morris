@@ -168,13 +168,87 @@
   .rules h3 { font-size: 13px; font-weight: 500; color: #5B6472; margin: 0 0 10px; }
   .rules ol { margin: 0; padding-left: 18px; }
   .rules li { font-size: 13.5px; line-height: 1.7; }
+
+  /* ---- Knockout win animation ---- */
+  .ko-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at center, rgba(30,14,12,0.78), rgba(8,5,5,0.94));
+    overflow: hidden; cursor: pointer;
+  }
+  .ko-overlay.hidden { display: none; }
+  .ko-ring-glow {
+    position: absolute; width: 480px; height: 480px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,200,80,0.35), transparent 70%);
+    animation: koGlowPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes koGlowPulse { 0%,100% { opacity: 0.45; transform: scale(1); } 50% { opacity: 0.9; transform: scale(1.15); } }
+  .ko-glove { position: absolute; font-size: 84px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.55)); }
+  .ko-glove-left { animation: koPunchLeft 0.9s cubic-bezier(.2,.9,.3,1.2) both; }
+  .ko-glove-right { animation: koPunchRight 0.9s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes koPunchLeft {
+    0% { transform: translate(-320px, 0) rotate(-18deg); opacity: 0; }
+    55% { transform: translate(-16px, 0) rotate(-6deg); opacity: 1; }
+    70% { transform: translate(-42px, -4px) rotate(-10deg); }
+    100% { transform: translate(-68px, -4px) rotate(-8deg); }
+  }
+  @keyframes koPunchRight {
+    0% { transform: translate(320px, 0) rotate(18deg) scaleX(-1); opacity: 0; }
+    55% { transform: translate(16px, 0) rotate(6deg) scaleX(-1); opacity: 1; }
+    70% { transform: translate(42px, -4px) rotate(10deg) scaleX(-1); }
+    100% { transform: translate(68px, -4px) rotate(8deg) scaleX(-1); }
+  }
+  .ko-burst {
+    position: absolute; width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; opacity: 0; animation: koBurst 0.55s ease-out 0.5s both;
+  }
+  @keyframes koBurst { 0% { transform: scale(0.2); opacity: 0.95; } 100% { transform: scale(9); opacity: 0; } }
+  .ko-text {
+    position: relative; font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+    font-size: 60px; color: #FFD23F; letter-spacing: 0.03em;
+    text-shadow: 0 4px 0 #B8330A, 0 8px 18px rgba(0,0,0,0.5);
+    opacity: 0; animation: koTextPop 0.5s cubic-bezier(.2,1.4,.4,1) 0.55s both;
+  }
+  @keyframes koTextPop {
+    0% { opacity: 0; transform: scale(0.3) rotate(-8deg); }
+    60% { opacity: 1; transform: scale(1.25) rotate(3deg); }
+    100% { opacity: 1; transform: scale(1) rotate(0deg); }
+  }
+  .ko-winner {
+    position: absolute; bottom: 24%; left: 50%; transform: translateX(-50%);
+    color: #fff; font-size: 16px; font-family: 'IBM Plex Sans', sans-serif; text-align: center;
+    opacity: 0; animation: koFadeIn 0.4s ease 0.95s both;
+  }
+  .ko-hint {
+    position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.55); font-size: 12px;
+    opacity: 0; animation: koFadeIn 0.4s ease 1.4s both;
+  }
+  @keyframes koFadeIn { to { opacity: 1; } }
+  .ko-star {
+    position: absolute; left: 50%; top: 50%; width: 6px; height: 6px;
+    background: #FFD23F; border-radius: 1px;
+    animation: koStarFly 0.7s ease-out both;
+  }
+  @keyframes koStarFly {
+    0% { transform: translate(-50%,-50%) rotate(var(--ang)) translateX(0) scale(1); opacity: 1; }
+    100% { transform: translate(-50%,-50%) rotate(var(--ang)) translateX(180px) scale(0); opacity: 0; }
+  }
+  .shake-screen { animation: koShake 0.4s ease 0.5s; }
+  @keyframes koShake {
+    0%,100% { transform: translate(0,0); }
+    20% { transform: translate(-6px, 3px); }
+    40% { transform: translate(6px, -3px); }
+    60% { transform: translate(-4px, 2px); }
+    80% { transform: translate(4px, -2px); }
+  }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header>
-    <h1>Nine Men's Morris</h1>
+    <h1>Nine Men's Morris By Presley</h1>
     <p>With corner diagonals &middot; play online with one other person</p>
   </header>
 
@@ -277,6 +351,17 @@
 </div>
 
 <div class="reaction-toast hidden" id="reaction-toast"></div>
+
+<div class="ko-overlay hidden" id="ko-overlay">
+  <div class="ko-ring-glow"></div>
+  <div class="ko-glove ko-glove-left">🥊</div>
+  <div class="ko-glove ko-glove-right">🥊</div>
+  <div class="ko-burst"></div>
+  <div class="ko-text">K.O.!</div>
+  <div class="ko-winner" id="ko-winner-name"></div>
+  <div class="ko-hint">Tap anywhere to continue</div>
+  <div id="ko-stars"></div>
+</div>
 
 <script>
 (function () {
@@ -497,6 +582,50 @@
   function sfxTurn() { beep(520, 0.08, 'sine'); }
   function sfxWin() { beep(784, 0.15, 'triangle'); setTimeout(function () { beep(988, 0.2, 'triangle'); }, 150); if (navigator.vibrate) navigator.vibrate([60, 40, 60]); }
 
+  // ---- knockout win animation ----
+  var koTracker = { winner: null };
+  var koOverlay = document.getElementById('ko-overlay');
+  var koWinnerName = document.getElementById('ko-winner-name');
+  var koStars = document.getElementById('ko-stars');
+  var koHideTimer = null;
+
+  function hideKoOverlay() {
+    koOverlay.classList.add('hidden');
+    if (koHideTimer) { clearTimeout(koHideTimer); koHideTimer = null; }
+  }
+  koOverlay.addEventListener('click', hideKoOverlay);
+
+  function playKoAnimation(st) {
+    koWinnerName.textContent = playerLabel(st, st.winner) + ' wins by knockout!';
+    koStars.innerHTML = '';
+    var starCount = 14;
+    for (var i = 0; i < starCount; i++) {
+      var star = document.createElement('span');
+      star.className = 'ko-star';
+      var ang = (360 / starCount) * i + (Math.random() * 16 - 8);
+      star.style.setProperty('--ang', ang + 'deg');
+      star.style.animationDelay = (0.5 + Math.random() * 0.08) + 's';
+      koStars.appendChild(star);
+    }
+    koOverlay.classList.remove('hidden');
+    var wrapEl = document.querySelector('.wrap');
+    wrapEl.classList.remove('shake-screen');
+    void wrapEl.offsetWidth; // force reflow so the shake animation restarts
+    wrapEl.classList.add('shake-screen');
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 90]);
+    if (koHideTimer) clearTimeout(koHideTimer);
+    koHideTimer = setTimeout(hideKoOverlay, 4800);
+  }
+
+  function maybeShowKo(st) {
+    if (st.winner && st.winner !== koTracker.winner) {
+      koTracker.winner = st.winner;
+      playKoAnimation(st);
+    } else if (!st.winner) {
+      koTracker.winner = null;
+    }
+  }
+
   var sfxTracker = { turn: null, winner: null, pendingRemoval: false, historyLen: 0, ready: false };
   function maybePlaySfx(st) {
     if (!sfxTracker.ready) {
@@ -532,6 +661,7 @@
     localState = st;
     render();
     maybePlaySfx(st);
+    maybeShowKo(st);
     if (!supabase) return;
     try {
       await supabase.from('rooms').update({ state: st, updated_at: new Date().toISOString() }).eq('code', roomCode);
@@ -558,6 +688,7 @@
         }
         render();
         maybePlaySfx(remote);
+        maybeShowKo(remote);
       })
       .on('presence', { event: 'sync' }, function () {
         var state = channel.presenceState();
@@ -660,6 +791,8 @@
     if (channel && supabase) supabase.removeChannel(channel);
     roomCode = null; myRole = null; localState = null; selected = null; prevRenderBoard = null;
     sfxTracker.ready = false;
+    koTracker.winner = null;
+    hideKoOverlay();
     clearSession();
     gameView.classList.add('hidden');
     lobbyView.classList.remove('hidden');
@@ -942,6 +1075,7 @@
       roomCode = savedRoom;
       myRole = savedRole;
       localState = result.data.state;
+      koTracker.winner = localState.winner || null; // don't replay KO for a win that already happened
       subscribeToRoom(roomCode);
       if (myRole === 'p1' && localState.phase === 'waiting') {
         roomCodeDisplay.textContent = roomCode;
