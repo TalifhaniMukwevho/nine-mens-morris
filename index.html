@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nine Men's Morris — Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --ink: #1B2430;
+    --paper: #EEF0F3;
+    --paper-2: #FFFFFF;
+    --line: #B7BEC9;
+    --line-strong: #8C95A3;
+    --p1: #1F2733;
+    --p2: #2F5FFF;
+    --p2-dim: #E4EBFF;
+    --success: #1F9D63;
+    --success-dim: #E4F5EC;
+    --danger: #D93636;
+    --danger-dim: #FCEAEA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 36px 20px 60px; }
+  header { text-align: center; margin-bottom: 26px; }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 24px; margin: 0 0 4px; }
+  header p { color: #5B6472; font-size: 14px; margin: 0; }
+  .hidden { display: none !important; }
+
+  .config-warning {
+    background: var(--danger-dim); color: #7A1F1F; border-radius: 10px;
+    padding: 14px 18px; font-size: 13.5px; line-height: 1.6; margin-bottom: 20px;
+  }
+  .config-warning code { font-family: 'IBM Plex Mono', monospace; background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 4px; }
+
+  .lobby { display: flex; gap: 16px; flex-wrap: wrap; }
+  .lobby-card {
+    flex: 1; min-width: 260px;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 22px 24px;
+  }
+  .lobby-card h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; margin: 0 0 6px; }
+  .lobby-card > p { color: #5B6472; font-size: 13.5px; margin: 0 0 16px; line-height: 1.5; }
+
+  button.primary-btn {
+    padding: 11px 18px; border-radius: 10px; border: none;
+    background: var(--ink); color: #EEF0F3;
+    font-size: 14px; font-weight: 500; font-family: 'IBM Plex Sans', sans-serif;
+    cursor: pointer; width: 100%;
+  }
+  button.primary-btn:hover { background: #2A3444; }
+  button.primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  input.code-input {
+    width: 100%; padding: 11px 13px; margin-bottom: 12px;
+    border-radius: 10px; border: 1px solid var(--line);
+    font-size: 15px; font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    outline: none;
+  }
+  input.code-input:focus { border-color: var(--p2); box-shadow: 0 0 0 3px var(--p2-dim); }
+
+  .room-code-box {
+    text-align: center; margin: 14px 0 10px;
+    padding: 14px; border-radius: 10px;
+    background: var(--paper); border: 1px dashed var(--line-strong);
+  }
+  .room-code-box .code { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; letter-spacing: 0.12em; }
+  .waiting-line { text-align: center; font-size: 13px; color: #5B6472; margin-top: 10px; }
+  .dot-pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--p2); margin-right: 6px; animation: pulse 1.1s infinite ease-in-out; }
+  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  .error-text { color: var(--danger); font-size: 13px; margin-top: 8px; }
+  button.link-small { background: none; border: none; color: var(--p2); font-size: 12.5px; cursor: pointer; padding: 0; font-family: 'IBM Plex Sans', sans-serif; }
+
+  .room-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12.5px; color: #5B6472; margin-bottom: 16px;
+    background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 14px;
+  }
+  .room-strip .code-tag { font-family: 'IBM Plex Mono', monospace; color: var(--ink); font-size: 13px; }
+
+  .scoreboard { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+  .player-card {
+    flex: 1; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .player-card.active { border-color: var(--line-strong); box-shadow: 0 0 0 2px rgba(0,0,0,0.05); }
+  .piece-dot { width: 20px; height: 20px; border-radius: 50%; flex: none; }
+  .piece-dot.p1 { background: var(--p1); }
+  .piece-dot.p2 { background: var(--p2); }
+  .player-info .name { font-weight: 500; font-size: 14.5px; }
+  .player-info .detail { font-size: 12.5px; color: #5B6472; margin-top: 2px; }
+
+  .status-bar {
+    text-align: center; font-size: 14px; padding: 10px 16px; border-radius: 10px;
+    background: var(--paper-2); border: 1px solid var(--line); margin-bottom: 22px; min-height: 20px;
+  }
+  .status-bar.remove { background: var(--danger-dim); color: #7A1F1F; border-color: transparent; }
+  .status-bar.mill { background: var(--success-dim); color: #0F5A38; border-color: transparent; }
+  .status-bar.wait { color: #5B6472; }
+
+  .board-holder { display: flex; justify-content: center; }
+  svg { width: 100%; max-width: 560px; height: auto; }
+  .board-edge { stroke: var(--line-strong); stroke-width: 2; }
+  .point-hit { fill: transparent; cursor: pointer; }
+  .point-dot { fill: var(--line-strong); }
+  .point-dot.valid { fill: var(--success); }
+  .piece { cursor: pointer; }
+  .piece.p1 { fill: var(--p1); }
+  .piece.p2 { fill: var(--p2); }
+  .piece.selected { stroke: var(--success); stroke-width: 4; }
+  .piece.removable { stroke: var(--danger); stroke-width: 4; cursor: pointer; }
+  .piece.locked { cursor: default; }
+
+  .controls { display: flex; justify-content: center; gap: 10px; margin-top: 26px; }
+  button.ghost-btn {
+    padding: 9px 18px; border-radius: 10px; border: 1px solid var(--line-strong);
+    background: var(--paper-2); font-size: 13.5px; font-family: 'IBM Plex Sans', sans-serif; cursor: pointer;
+  }
+  button.ghost-btn:hover { background: var(--paper); }
+
+  .rules { margin-top: 32px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; }
+  .rules h3 { font-size: 13px; font-weight: 500; color: #5B6472; margin: 0 0 10px; }
+  .rules ol { margin: 0; padding-left: 18px; }
+  .rules li { font-size: 13.5px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Nine Men's Morris</h1>
+    <p>With corner diagonals &middot; play online with one other person</p>
+  </header>
+
+  <div id="config-warning" class="config-warning hidden">
+    Set <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> near the top of the script before this will work.
+  </div>
+
+  <div id="lobby-view" class="lobby">
+    <div class="lobby-card">
+      <h2>Create a game</h2>
+      <p>Get a room code, then send it to your partner.</p>
+      <button class="primary-btn" id="create-btn">Create game</button>
+      <div id="created-info" class="hidden">
+        <div class="room-code-box">
+          <div class="code" id="room-code-display"></div>
+        </div>
+        <button class="link-small" id="copy-code-btn">Copy code</button>
+        <p class="waiting-line"><span class="dot-pulse"></span>Waiting for your partner to join...</p>
+      </div>
+    </div>
+    <div class="lobby-card">
+      <h2>Join a game</h2>
+      <p>Enter the code your partner sent you.</p>
+      <input class="code-input" id="join-code-input" maxlength="6" placeholder="e.g. 7F3K9Q">
+      <button class="primary-btn" id="join-btn">Join game</button>
+      <p class="error-text hidden" id="join-error"></p>
+    </div>
+  </div>
+
+  <div id="game-view" class="hidden">
+    <div class="room-strip">
+      <span>Room <span class="code-tag" id="active-room-code"></span></span>
+      <span id="role-label"></span>
+    </div>
+
+    <div class="scoreboard">
+      <div class="player-card" id="card-p1">
+        <div class="piece-dot p1"></div>
+        <div class="player-info">
+          <div class="name">Player 1</div>
+          <div class="detail" id="p1-detail">9 to place</div>
+        </div>
+      </div>
+      <div class="player-card" id="card-p2">
+        <div class="piece-dot p2"></div>
+        <div class="player-info">
+          <div class="name">Player 2</div>
+          <div class="detail" id="p2-detail">9 to place</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar" id="status-bar">Loading...</div>
+
+    <div class="board-holder">
+      <svg id="board" viewBox="0 0 640 640"></svg>
+    </div>
+
+    <div class="controls">
+      <button class="ghost-btn" id="leave-btn">Leave game</button>
+    </div>
+
+    <div class="rules">
+      <h3>HOW TO PLAY</h3>
+      <ol>
+        <li>Take turns placing your 9 pieces on empty points. Three of your pieces in a line (including the diagonals) forms a mill and removes one opponent piece.</li>
+        <li>Once all pieces are placed, take turns sliding a piece to a connected empty point. Forming a new mill again removes an opponent piece.</li>
+        <li>When you're down to 3 pieces, you can fly to any empty point instead of just an adjacent one.</li>
+        <li>A player loses when reduced to 2 pieces, or when they can't make a legal move on their turn.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------------------------------------------------------------
+  // CONFIG: paste your Supabase project values here before deploying
+  // Project Settings -> API in your Supabase dashboard
+  // ---------------------------------------------------------------
+  var SUPABASE_URL = 'https://gxvdfssaiqskbzeqnpmo.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_WXaS6fBCjyipclVD4cDS0w_0t4c1lpl';
+  // ---------------------------------------------------------------
+
+  var configMissing = SUPABASE_URL.indexOf('YOUR-PROJECT-REF') !== -1 || SUPABASE_ANON_KEY.indexOf('YOUR-ANON') !== -1;
+  if (configMissing) {
+    document.getElementById('config-warning').classList.remove('hidden');
+  }
+
+  var supabase = configMissing ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var POINTS = {
+    a1:[0,0], d1:[3,0], g1:[6,0],
+    b2:[1,1], d2:[3,1], f2:[5,1],
+    c3:[2,2], d3:[3,2], e3:[4,2],
+    a4:[0,3], b4:[1,3], c4:[2,3], e4:[4,3], f4:[5,3], g4:[6,3],
+    c5:[2,4], d5:[3,4], e5:[4,4],
+    b6:[1,5], d6:[3,5], f6:[5,5],
+    a7:[0,6], d7:[3,6], g7:[6,6]
+  };
+
+  var EDGES = [
+    ['a1','d1'],['d1','g1'],['b2','d2'],['d2','f2'],['c3','d3'],['d3','e3'],
+    ['a4','b4'],['b4','c4'],['e4','f4'],['f4','g4'],['c5','d5'],['d5','e5'],
+    ['b6','d6'],['d6','f6'],['a7','d7'],['d7','g7'],
+    ['a1','a4'],['a4','a7'],['b2','b4'],['b4','b6'],['c3','c4'],['c4','c5'],
+    ['d1','d2'],['d2','d3'],['d5','d6'],['d6','d7'],['e3','e4'],['e4','e5'],
+    ['f2','f4'],['f4','f6'],['g1','g4'],['g4','g7'],
+    ['a1','b2'],['b2','c3'],['g1','f2'],['f2','e3'],
+    ['a7','b6'],['b6','c5'],['g7','f6'],['f6','e5']
+  ];
+
+  var MILLS = [
+    ['a1','d1','g1'],['b2','d2','f2'],['c3','d3','e3'],['a4','b4','c4'],
+    ['e4','f4','g4'],['c5','d5','e5'],['b6','d6','f6'],['a7','d7','g7'],
+    ['a1','a4','a7'],['b2','b4','b6'],['c3','c4','c5'],['d1','d2','d3'],
+    ['d5','d6','d7'],['e3','e4','e5'],['f2','f4','f6'],['g1','g4','g7'],
+    ['a1','b2','c3'],['g1','f2','e3'],['a7','b6','c5'],['g7','f6','e5']
+  ];
+
+  var ADJ = {};
+  Object.keys(POINTS).forEach(function (p) { ADJ[p] = []; });
+  EDGES.forEach(function (e) { ADJ[e[0]].push(e[1]); ADJ[e[1]].push(e[0]); });
+
+  var MARGIN = 70, SPACING = (640 - 140) / 6;
+  function pixel(id) {
+    var g = POINTS[id];
+    return [MARGIN + g[0] * SPACING, MARGIN + g[1] * SPACING];
+  }
+
+  function emptyBoard() {
+    var b = {};
+    Object.keys(POINTS).forEach(function (p) { b[p] = null; });
+    return b;
+  }
+
+  function freshState() {
+    return {
+      p2Present: false,
+      phase: 'waiting',
+      turn: 'p1',
+      toPlace: { p1: 9, p2: 9 },
+      onBoard: { p1: 0, p2: 0 },
+      board: emptyBoard(),
+      pendingRemoval: false,
+      winner: null
+    };
+  }
+
+  var myRole = null;
+  var roomCode = null;
+  var localState = null;
+  var selected = null;
+  var channel = null;
+
+  var lobbyView = document.getElementById('lobby-view');
+  var gameView = document.getElementById('game-view');
+  var createBtn = document.getElementById('create-btn');
+  var createdInfo = document.getElementById('created-info');
+  var roomCodeDisplay = document.getElementById('room-code-display');
+  var copyCodeBtn = document.getElementById('copy-code-btn');
+  var joinCodeInput = document.getElementById('join-code-input');
+  var joinBtn = document.getElementById('join-btn');
+  var joinError = document.getElementById('join-error');
+  var activeRoomCode = document.getElementById('active-room-code');
+  var roleLabel = document.getElementById('role-label');
+  var svg = document.getElementById('board');
+  var statusBar = document.getElementById('status-bar');
+  var cardP1 = document.getElementById('card-p1');
+  var cardP2 = document.getElementById('card-p2');
+  var p1Detail = document.getElementById('p1-detail');
+  var p2Detail = document.getElementById('p2-detail');
+  var leaveBtn = document.getElementById('leave-btn');
+
+  function genCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var out = '';
+    for (var i = 0; i < 6; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
+
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.keys(attrs).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+    return el;
+  }
+
+  function opponent(pl) { return pl === 'p1' ? 'p2' : 'p1'; }
+  function playerName(pl) { return pl === 'p1' ? 'Player 1' : 'Player 2'; }
+
+  function pointsOf(board, pl) { return Object.keys(board).filter(function (p) { return board[p] === pl; }); }
+  function emptyPoints(board) { return Object.keys(board).filter(function (p) { return board[p] === null; }); }
+  function isMillAt(board, point, pl) {
+    return MILLS.some(function (m) {
+      return m.indexOf(point) !== -1 && m.every(function (p) { return board[p] === pl; });
+    });
+  }
+  function allInMills(board, pl) { return pointsOf(board, pl).every(function (p) { return isMillAt(board, p, pl); }); }
+  function canFly(st, pl) { return st.phase === 'moving' && st.onBoard[pl] === 3; }
+  function hasAnyMove(st, pl) {
+    if (canFly(st, pl)) return emptyPoints(st.board).length > 0;
+    return pointsOf(st.board, pl).some(function (p) {
+      return ADJ[p].some(function (n) { return st.board[n] === null; });
+    });
+  }
+
+  function setStatus(text, kind) {
+    statusBar.className = 'status-bar' + (kind ? ' ' + kind : '');
+    statusBar.textContent = text;
+  }
+
+  async function writeState(st) {
+    localState = st;
+    render();
+    if (!supabase) return;
+    try {
+      await supabase.from('rooms').update({ state: st, updated_at: new Date().toISOString() }).eq('code', roomCode);
+    } catch (err) {
+      console.error('Failed to sync move', err);
+    }
+  }
+
+  function subscribeToRoom(code) {
+    if (!supabase) return;
+    if (channel) supabase.removeChannel(channel);
+    channel = supabase
+      .channel('room-' + code)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code }, function (payload) {
+        var remote = payload.new.state;
+        localState = remote;
+        if (localState.p2Present && lobbyView.classList.contains('hidden') === false) {
+          enterGameView();
+        }
+        render();
+      })
+      .subscribe();
+  }
+
+  function enterGameView() {
+    lobbyView.classList.add('hidden');
+    gameView.classList.remove('hidden');
+    activeRoomCode.textContent = roomCode;
+    roleLabel.textContent = myRole === 'p1' ? 'You are Player 1 (dark)' : 'You are Player 2 (blue)';
+  }
+
+  createBtn.addEventListener('click', async function () {
+    if (!supabase) { alert('Add your Supabase URL and anon key in the script before using this.'); return; }
+    createBtn.disabled = true;
+    roomCode = genCode();
+    myRole = 'p1';
+    var st = freshState();
+    localState = st;
+    try {
+      await supabase.from('rooms').insert({ code: roomCode, state: st });
+      roomCodeDisplay.textContent = roomCode;
+      createdInfo.classList.remove('hidden');
+      subscribeToRoom(roomCode);
+    } catch (err) {
+      alert('Could not create the room. Try again.');
+      createBtn.disabled = false;
+    }
+  });
+
+  copyCodeBtn.addEventListener('click', function () {
+    navigator.clipboard.writeText(roomCode).then(function () {
+      copyCodeBtn.textContent = 'Copied';
+      setTimeout(function () { copyCodeBtn.textContent = 'Copy code'; }, 1500);
+    });
+  });
+
+  joinBtn.addEventListener('click', async function () {
+    if (!supabase) { alert('Add your Supabase URL and anon key in the script before using this.'); return; }
+    var code = joinCodeInput.value.trim().toUpperCase();
+    joinError.classList.add('hidden');
+    if (!code) {
+      joinError.textContent = 'Enter a room code.';
+      joinError.classList.remove('hidden');
+      return;
+    }
+    joinBtn.disabled = true;
+    try {
+      var result = await supabase.from('rooms').select('state').eq('code', code).single();
+      if (result.error || !result.data) throw new Error('not found');
+      var st = result.data.state;
+      if (st.p2Present) {
+        joinError.textContent = 'That room is already full.';
+        joinError.classList.remove('hidden');
+        joinBtn.disabled = false;
+        return;
+      }
+      st.p2Present = true;
+      st.phase = 'placing';
+      roomCode = code;
+      myRole = 'p2';
+      await writeState(st);
+      enterGameView();
+      subscribeToRoom(roomCode);
+    } catch (err) {
+      joinError.textContent = 'Room not found. Check the code and try again.';
+      joinError.classList.remove('hidden');
+      joinBtn.disabled = false;
+    }
+  });
+
+  leaveBtn.addEventListener('click', function () {
+    if (channel && supabase) supabase.removeChannel(channel);
+    roomCode = null; myRole = null; localState = null; selected = null;
+    gameView.classList.add('hidden');
+    lobbyView.classList.remove('hidden');
+    createdInfo.classList.add('hidden');
+    createBtn.disabled = false;
+    joinCodeInput.value = '';
+  });
+
+  function updateScoreboard(st) {
+    cardP1.classList.toggle('active', st.turn === 'p1' && !st.winner);
+    cardP2.classList.toggle('active', st.turn === 'p2' && !st.winner);
+    p1Detail.textContent = st.phase === 'placing'
+      ? st.toPlace.p1 + ' to place'
+      : st.onBoard.p1 + ' on board' + (canFly(st, 'p1') ? ' \u00b7 flying' : '');
+    p2Detail.textContent = st.phase === 'placing'
+      ? st.toPlace.p2 + ' to place'
+      : st.onBoard.p2 + ' on board' + (canFly(st, 'p2') ? ' \u00b7 flying' : '');
+  }
+
+  function currentStatusText(st) {
+    if (st.winner) return playerName(st.winner) + ' wins!' + (st.winner === myRole ? ' That\'s you.' : '');
+    if (st.phase === 'waiting') return 'Waiting for your partner to join...';
+    var myTurn = st.turn === myRole;
+    if (st.pendingRemoval) {
+      return myTurn ? 'You formed a mill! Tap an opponent piece to remove it.' : playerName(st.turn) + ' is removing one of your pieces.';
+    }
+    if (!myTurn) return playerName(st.turn) + '\u2019s turn...';
+    if (st.phase === 'placing') return 'Your turn: place a piece on any open point.';
+    return 'Your turn: select a piece to move' + (canFly(st, myRole) ? ' (you can fly anywhere).' : '.');
+  }
+
+  function render() {
+    if (!localState) return;
+    var st = localState;
+    svg.innerHTML = '';
+
+    EDGES.forEach(function (e) {
+      var a = pixel(e[0]), b = pixel(e[1]);
+      svg.appendChild(svgEl('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'board-edge' }));
+    });
+
+    var myTurn = st.turn === myRole && !st.winner;
+    var validTargets = [];
+    if (selected && myTurn) {
+      validTargets = canFly(st, myRole)
+        ? emptyPoints(st.board)
+        : ADJ[selected].filter(function (n) { return st.board[n] === null; });
+    }
+
+    Object.keys(POINTS).forEach(function (id) {
+      var pos = pixel(id);
+      var occupant = st.board[id];
+
+      if (!occupant) {
+        var isValid = validTargets.indexOf(id) !== -1;
+        svg.appendChild(svgEl('circle', { cx: pos[0], cy: pos[1], r: isValid ? 9 : 5, class: 'point-dot' + (isValid ? ' valid' : '') }));
+        var hit = svgEl('circle', { cx: pos[0], cy: pos[1], r: 20, class: 'point-hit' });
+        hit.addEventListener('click', function () { handlePointClick(id); });
+        svg.appendChild(hit);
+      } else {
+        var classes = 'piece ' + occupant;
+        var interactive = false;
+        if (st.pendingRemoval && myTurn && occupant === opponent(myRole)) {
+          var removable = !allInMills(st.board, occupant) ? !isMillAt(st.board, id, occupant) : true;
+          if (removable) { classes += ' removable'; interactive = true; }
+        } else if (!st.pendingRemoval && myTurn && st.phase === 'moving' && occupant === myRole) {
+          interactive = true;
+        }
+        if (!interactive) classes += ' locked';
+        if (selected === id) classes += ' selected';
+        var piece = svgEl('circle', { cx: pos[0], cy: pos[1], r: 15, class: classes });
+        piece.addEventListener('click', function () { handlePieceClick(id, occupant); });
+        svg.appendChild(piece);
+      }
+    });
+
+    updateScoreboard(st);
+    var kind = st.winner ? '' : (st.pendingRemoval ? 'remove' : (st.phase === 'waiting' ? 'wait' : ''));
+    setStatus(currentStatusText(st), kind);
+  }
+
+  function afterMillCheck(st, point, pl) {
+    if (isMillAt(st.board, point, pl)) { st.pendingRemoval = true; return true; }
+    return false;
+  }
+
+  function checkWin(st) {
+    var opp = opponent(st.turn);
+    if (st.phase === 'moving' && st.onBoard[opp] <= 2) { st.winner = st.turn; return true; }
+    return false;
+  }
+
+  function endTurnUnlessRemoval(st) {
+    if (st.pendingRemoval) return st;
+    if (checkWin(st)) return st;
+    st.turn = opponent(st.turn);
+    if (st.phase === 'moving' && !hasAnyMove(st, st.turn)) { st.winner = opponent(st.turn); return st; }
+    return st;
+  }
+
+  function handlePointClick(id) {
+    if (!localState || localState.winner) return;
+    var st = localState;
+    if (st.turn !== myRole || st.pendingRemoval) return;
+
+    if (st.phase === 'placing') {
+      st.board[id] = myRole;
+      st.toPlace[myRole] -= 1;
+      st.onBoard[myRole] += 1;
+      var formed = afterMillCheck(st, id, myRole);
+      if (st.toPlace.p1 === 0 && st.toPlace.p2 === 0) st.phase = 'moving';
+      if (!formed) endTurnUnlessRemoval(st);
+      writeState(st);
+      return;
+    }
+
+    if (st.phase === 'moving' && selected) {
+      var valid = canFly(st, myRole)
+        ? st.board[id] === null
+        : ADJ[selected].indexOf(id) !== -1 && st.board[id] === null;
+      if (!valid) return;
+      st.board[selected] = myRole;
+      st.board[id] = null;
+      var movedTo = id;
+      selected = null;
+      var formedMove = afterMillCheck(st, movedTo, myRole);
+      if (!formedMove) endTurnUnlessRemoval(st);
+      writeState(st);
+    }
+  }
+
+  function handlePieceClick(id, occupant) {
+    if (!localState || localState.winner) return;
+    var st = localState;
+    if (st.turn !== myRole) return;
+
+    if (st.pendingRemoval) {
+      if (occupant !== opponent(myRole)) return;
+      var removable = !allInMills(st.board, occupant) ? !isMillAt(st.board, id, occupant) : true;
+      if (!removable) return;
+      st.board[id] = null;
+      st.onBoard[occupant] -= 1;
+      st.pendingRemoval = false;
+      endTurnUnlessRemoval(st);
+      writeState(st);
+      return;
+    }
+
+    if (st.phase !== 'moving' || occupant !== myRole) return;
+    selected = (selected === id) ? null : id;
+    render();
+  }
+
+  setStatus('Create a game or join one with a code to get started.');
+})();
+</script>
+
+</body>
+</html>
