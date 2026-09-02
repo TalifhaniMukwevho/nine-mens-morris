@@ -69,6 +69,10 @@
     outline: none;
   }
   input.code-input:focus { border-color: var(--p2); box-shadow: 0 0 0 3px var(--p2-dim); }
+  input.name-input { text-transform: none; letter-spacing: normal; font-family: 'IBM Plex Sans', sans-serif; }
+
+  .ruleset-row { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font-size: 13px; color: #5B6472; }
+  .ruleset-row input { width: 15px; height: 15px; }
 
   .room-code-box {
     text-align: center; margin: 14px 0 10px;
@@ -84,7 +88,7 @@
   button.link-small { background: none; border: none; color: var(--p2); font-size: 12.5px; cursor: pointer; padding: 0; font-family: 'IBM Plex Sans', sans-serif; }
 
   .room-strip {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;
     font-size: 12.5px; color: #5B6472; margin-bottom: 16px;
     background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px;
     padding: 8px 14px;
@@ -94,14 +98,17 @@
   .scoreboard { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
   .player-card {
     flex: 1; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px;
-    padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: relative;
   }
   .player-card.active { border-color: var(--line-strong); box-shadow: 0 0 0 2px rgba(0,0,0,0.05); }
   .piece-dot { width: 20px; height: 20px; border-radius: 50%; flex: none; }
   .piece-dot.p1 { background: var(--p1); }
   .piece-dot.p2 { background: var(--p2); }
-  .player-info .name { font-weight: 500; font-size: 14.5px; }
+  .player-info { flex: 1; min-width: 0; }
+  .player-info .name { font-weight: 500; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .player-info .detail { font-size: 12.5px; color: #5B6472; margin-top: 2px; }
+  .presence-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: #C6CCD4; }
+  .presence-dot.online { background: var(--success); }
 
   .status-bar {
     text-align: center; font-size: 14px; padding: 10px 16px; border-radius: 10px;
@@ -117,12 +124,28 @@
   .point-hit { fill: transparent; cursor: pointer; }
   .point-dot { fill: var(--line-strong); }
   .point-dot.valid { fill: var(--success); }
-  .piece { cursor: pointer; }
+  .piece { cursor: pointer; transform-box: fill-box; transform-origin: center; }
   .piece.p1 { fill: var(--p1); }
   .piece.p2 { fill: var(--p2); }
   .piece.selected { stroke: var(--success); stroke-width: 4; }
   .piece.removable { stroke: var(--danger); stroke-width: 4; cursor: pointer; }
   .piece.locked { cursor: default; }
+
+  @keyframes piecePop { 0% { transform: scale(0.25); opacity: 0; } 65% { transform: scale(1.18); opacity: 1; } 100% { transform: scale(1); } }
+  .piece.piece-pop { animation: piecePop 0.32s ease; }
+
+  @keyframes millGlowPulse { 0%,100% { filter: drop-shadow(0 0 0 rgba(31,157,99,0)); } 50% { filter: drop-shadow(0 0 7px rgba(31,157,99,0.95)); } }
+  .piece.mill-glow { animation: millGlowPulse 0.9s ease-in-out infinite; }
+
+  .reactions-row { display: flex; justify-content: center; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .reaction-btn { border: 1px solid var(--line); background: var(--paper-2); border-radius: 20px; padding: 6px 13px; font-size: 17px; cursor: pointer; line-height: 1; }
+  .reaction-btn:hover { background: var(--paper); }
+
+  .reaction-toast {
+    position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 20px; border-radius: 30px;
+    font-size: 14px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); z-index: 50;
+  }
 
   .controls { display: flex; justify-content: center; gap: 10px; margin-top: 26px; }
   button.ghost-btn {
@@ -130,6 +153,16 @@
     background: var(--paper-2); font-size: 13.5px; font-family: 'IBM Plex Sans', sans-serif; cursor: pointer;
   }
   button.ghost-btn:hover { background: var(--paper); }
+
+  .rematch-area { text-align: center; margin-top: 18px; }
+  .rematch-area .primary-btn { width: auto; padding: 11px 30px; }
+
+  .history-panel { margin-top: 26px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 20px; max-height: 170px; overflow-y: auto; }
+  .history-panel h3 { font-size: 12px; font-weight: 500; color: #5B6472; margin: 0 0 8px; letter-spacing: 0.05em; }
+  .history-list { list-style: none; margin: 0; padding: 0; }
+  .history-list li { font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--paper); color: #333; }
+  .history-list li:last-child { border-bottom: none; }
+  .history-empty { color: #8C95A3 !important; }
 
   .rules { margin-top: 32px; background: var(--paper-2); border: 1px solid var(--line); border-radius: 12px; padding: 18px 22px; }
   .rules h3 { font-size: 13px; font-weight: 500; color: #5B6472; margin: 0 0 10px; }
@@ -153,18 +186,23 @@
     <div class="lobby-card">
       <h2>Create a game</h2>
       <p>Get a room code, then send it to your partner.</p>
+      <input class="code-input name-input" id="create-name-input" maxlength="20" placeholder="Your name (optional)">
+      <label class="ruleset-row"><input type="checkbox" id="diagonals-toggle" checked> Include corner diagonals</label>
       <button class="primary-btn" id="create-btn">Create game</button>
       <div id="created-info" class="hidden">
         <div class="room-code-box">
           <div class="code" id="room-code-display"></div>
         </div>
         <button class="link-small" id="copy-code-btn">Copy code</button>
+        &nbsp;&middot;&nbsp;
+        <button class="link-small" id="copy-link-btn">Copy invite link</button>
         <p class="waiting-line"><span class="dot-pulse"></span>Waiting for your partner to join...</p>
       </div>
     </div>
     <div class="lobby-card">
       <h2>Join a game</h2>
       <p>Enter the code your partner sent you.</p>
+      <input class="code-input name-input" id="join-name-input" maxlength="20" placeholder="Your name (optional)">
       <input class="code-input" id="join-code-input" maxlength="6" placeholder="e.g. 7F3K9Q">
       <button class="primary-btn" id="join-btn">Join game</button>
       <p class="error-text hidden" id="join-error"></p>
@@ -175,22 +213,26 @@
     <div class="room-strip">
       <span>Room <span class="code-tag" id="active-room-code"></span></span>
       <span id="role-label"></span>
+      <span class="code-tag" id="score-display"></span>
+      <span id="turn-timer"></span>
     </div>
 
     <div class="scoreboard">
       <div class="player-card" id="card-p1">
         <div class="piece-dot p1"></div>
         <div class="player-info">
-          <div class="name">Player 1</div>
+          <div class="name" id="p1-name">Player 1</div>
           <div class="detail" id="p1-detail">9 to place</div>
         </div>
+        <span class="presence-dot" id="p1-presence"></span>
       </div>
       <div class="player-card" id="card-p2">
         <div class="piece-dot p2"></div>
         <div class="player-info">
-          <div class="name">Player 2</div>
+          <div class="name" id="p2-name">Player 2</div>
           <div class="detail" id="p2-detail">9 to place</div>
         </div>
+        <span class="presence-dot" id="p2-presence"></span>
       </div>
     </div>
 
@@ -200,14 +242,32 @@
       <svg id="board" viewBox="0 0 640 640"></svg>
     </div>
 
+    <div class="reactions-row" id="reactions-row">
+      <button class="reaction-btn" data-emoji="👍" type="button">👍</button>
+      <button class="reaction-btn" data-emoji="😮" type="button">😮</button>
+      <button class="reaction-btn" data-emoji="😂" type="button">😂</button>
+      <button class="reaction-btn" data-emoji="🔥" type="button">🔥</button>
+      <button class="reaction-btn" data-emoji="😤" type="button">😤</button>
+    </div>
+
     <div class="controls">
       <button class="ghost-btn" id="leave-btn">Leave game</button>
+    </div>
+
+    <div class="rematch-area hidden" id="rematch-area">
+      <button class="primary-btn" id="rematch-btn">Rematch</button>
+      <p class="waiting-line" id="rematch-status"></p>
+    </div>
+
+    <div class="history-panel">
+      <h3>MOVE HISTORY</h3>
+      <ul class="history-list" id="history-list"><li class="history-empty">No moves yet.</li></ul>
     </div>
 
     <div class="rules">
       <h3>HOW TO PLAY</h3>
       <ol>
-        <li>Take turns placing your 9 pieces on empty points. Three of your pieces in a line (including the diagonals) forms a mill and removes one opponent piece.</li>
+        <li>Take turns placing your 9 pieces on empty points. Three of your pieces in a line (including the diagonals, if enabled) forms a mill and removes one opponent piece.</li>
         <li>Once all pieces are placed, take turns sliding a piece to a connected empty point. Forming a new mill again removes an opponent piece.</li>
         <li>When you're down to 3 pieces, you can fly to any empty point instead of just an adjacent one.</li>
         <li>A player loses when reduced to 2 pieces, or when they can't make a legal move on their turn.</li>
@@ -215,6 +275,8 @@
     </div>
   </div>
 </div>
+
+<div class="reaction-toast hidden" id="reaction-toast"></div>
 
 <script>
 (function () {
@@ -245,7 +307,7 @@
     a7:[0,6], d7:[3,6], g7:[6,6]
   };
 
-  var EDGES = [
+  var ALL_EDGES = [
     ['a1','d1'],['d1','g1'],['b2','d2'],['d2','f2'],['c3','d3'],['d3','e3'],
     ['a4','b4'],['b4','c4'],['e4','f4'],['f4','g4'],['c5','d5'],['d5','e5'],
     ['b6','d6'],['d6','f6'],['a7','d7'],['d7','g7'],
@@ -255,18 +317,30 @@
     ['a1','b2'],['b2','c3'],['g1','f2'],['f2','e3'],
     ['a7','b6'],['b6','c5'],['g7','f6'],['f6','e5']
   ];
+  var BASE_EDGE_COUNT = ALL_EDGES.length - 8;
 
-  var MILLS = [
+  var ALL_MILLS = [
     ['a1','d1','g1'],['b2','d2','f2'],['c3','d3','e3'],['a4','b4','c4'],
     ['e4','f4','g4'],['c5','d5','e5'],['b6','d6','f6'],['a7','d7','g7'],
     ['a1','a4','a7'],['b2','b4','b6'],['c3','c4','c5'],['d1','d2','d3'],
     ['d5','d6','d7'],['e3','e4','e5'],['f2','f4','f6'],['g1','g4','g7'],
     ['a1','b2','c3'],['g1','f2','e3'],['a7','b6','c5'],['g7','f6','e5']
   ];
+  var BASE_MILL_COUNT = ALL_MILLS.length - 4;
 
-  var ADJ = {};
-  Object.keys(POINTS).forEach(function (p) { ADJ[p] = []; });
-  EDGES.forEach(function (e) { ADJ[e[0]].push(e[1]); ADJ[e[1]].push(e[0]); });
+  function buildAdj(edges) {
+    var adj = {};
+    Object.keys(POINTS).forEach(function (p) { adj[p] = []; });
+    edges.forEach(function (e) { adj[e[0]].push(e[1]); adj[e[1]].push(e[0]); });
+    return adj;
+  }
+  var ADJ_DIAG = buildAdj(ALL_EDGES);
+  var ADJ_NODIAG = buildAdj(ALL_EDGES.slice(0, BASE_EDGE_COUNT));
+
+  function withDiagonals(st) { return !st || !st.ruleset || st.ruleset.diagonals !== false; }
+  function edgesFor(st) { return withDiagonals(st) ? ALL_EDGES : ALL_EDGES.slice(0, BASE_EDGE_COUNT); }
+  function millsFor(st) { return withDiagonals(st) ? ALL_MILLS : ALL_MILLS.slice(0, BASE_MILL_COUNT); }
+  function adjFor(st) { return withDiagonals(st) ? ADJ_DIAG : ADJ_NODIAG; }
 
   var MARGIN = 70, SPACING = (640 - 140) / 6;
   function pixel(id) {
@@ -280,7 +354,7 @@
     return b;
   }
 
-  function freshState() {
+  function freshState(diagonals) {
     return {
       p2Present: false,
       phase: 'waiting',
@@ -289,8 +363,32 @@
       onBoard: { p1: 0, p2: 0 },
       board: emptyBoard(),
       pendingRemoval: false,
-      winner: null
+      winner: null,
+      players: { p1: { name: null }, p2: { name: null } },
+      score: { p1: 0, p2: 0 },
+      history: [],
+      reaction: null,
+      rematchRequestedBy: null,
+      ruleset: { diagonals: diagonals !== false },
+      turnStartedAt: Date.now()
     };
+  }
+
+  function startRematch(prev) {
+    var st = freshState(prev.ruleset ? prev.ruleset.diagonals : true);
+    st.p2Present = true;
+    st.phase = 'placing';
+    st.players = prev.players;
+    st.score = prev.score || { p1: 0, p2: 0 };
+    var totalGames = (st.score.p1 || 0) + (st.score.p2 || 0);
+    st.turn = (totalGames % 2 === 0) ? 'p1' : 'p2';
+    st.turnStartedAt = Date.now();
+    return st;
+  }
+
+  function bumpScore(st, winner) {
+    st.score = st.score || { p1: 0, p2: 0 };
+    st.score[winner] = (st.score[winner] || 0) + 1;
   }
 
   var myRole = null;
@@ -298,6 +396,8 @@
   var localState = null;
   var selected = null;
   var channel = null;
+  var prevRenderBoard = null;
+  var reactionTimer = null;
 
   var lobbyView = document.getElementById('lobby-view');
   var gameView = document.getElementById('game-view');
@@ -305,18 +405,34 @@
   var createdInfo = document.getElementById('created-info');
   var roomCodeDisplay = document.getElementById('room-code-display');
   var copyCodeBtn = document.getElementById('copy-code-btn');
+  var copyLinkBtn = document.getElementById('copy-link-btn');
+  var createNameInput = document.getElementById('create-name-input');
+  var diagonalsToggle = document.getElementById('diagonals-toggle');
+  var joinNameInput = document.getElementById('join-name-input');
   var joinCodeInput = document.getElementById('join-code-input');
   var joinBtn = document.getElementById('join-btn');
   var joinError = document.getElementById('join-error');
   var activeRoomCode = document.getElementById('active-room-code');
   var roleLabel = document.getElementById('role-label');
+  var scoreDisplay = document.getElementById('score-display');
+  var turnTimerEl = document.getElementById('turn-timer');
   var svg = document.getElementById('board');
   var statusBar = document.getElementById('status-bar');
   var cardP1 = document.getElementById('card-p1');
   var cardP2 = document.getElementById('card-p2');
+  var p1NameEl = document.getElementById('p1-name');
+  var p2NameEl = document.getElementById('p2-name');
   var p1Detail = document.getElementById('p1-detail');
   var p2Detail = document.getElementById('p2-detail');
+  var p1Presence = document.getElementById('p1-presence');
+  var p2Presence = document.getElementById('p2-presence');
   var leaveBtn = document.getElementById('leave-btn');
+  var rematchArea = document.getElementById('rematch-area');
+  var rematchBtn = document.getElementById('rematch-btn');
+  var rematchStatus = document.getElementById('rematch-status');
+  var historyList = document.getElementById('history-list');
+  var reactionToast = document.getElementById('reaction-toast');
+  var reactionsRow = document.getElementById('reactions-row');
 
   function genCode() {
     var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -332,21 +448,25 @@
   }
 
   function opponent(pl) { return pl === 'p1' ? 'p2' : 'p1'; }
-  function playerName(pl) { return pl === 'p1' ? 'Player 1' : 'Player 2'; }
+  function playerLabel(st, pl) {
+    if (st && st.players && st.players[pl] && st.players[pl].name) return st.players[pl].name;
+    return pl === 'p1' ? 'Player 1' : 'Player 2';
+  }
 
   function pointsOf(board, pl) { return Object.keys(board).filter(function (p) { return board[p] === pl; }); }
   function emptyPoints(board) { return Object.keys(board).filter(function (p) { return board[p] === null; }); }
-  function isMillAt(board, point, pl) {
-    return MILLS.some(function (m) {
+  function isMillAt(st, board, point, pl) {
+    return millsFor(st).some(function (m) {
       return m.indexOf(point) !== -1 && m.every(function (p) { return board[p] === pl; });
     });
   }
-  function allInMills(board, pl) { return pointsOf(board, pl).every(function (p) { return isMillAt(board, p, pl); }); }
+  function allInMills(st, board, pl) { return pointsOf(board, pl).every(function (p) { return isMillAt(st, board, p, pl); }); }
   function canFly(st, pl) { return st.phase === 'moving' && st.onBoard[pl] === 3; }
   function hasAnyMove(st, pl) {
     if (canFly(st, pl)) return emptyPoints(st.board).length > 0;
+    var adj = adjFor(st);
     return pointsOf(st.board, pl).some(function (p) {
-      return ADJ[p].some(function (n) { return st.board[n] === null; });
+      return adj[p].some(function (n) { return st.board[n] === null; });
     });
   }
 
@@ -355,9 +475,63 @@
     statusBar.textContent = text;
   }
 
+  // ---- sound effects (Web Audio, no files needed) ----
+  var audioCtx = null;
+  function beep(freq, duration, type) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + duration);
+    } catch (e) { /* audio not available, ignore */ }
+  }
+  function sfxPlace() { beep(420, 0.12, 'sine'); }
+  function sfxMove() { beep(360, 0.1, 'sine'); }
+  function sfxMill() { beep(660, 0.15, 'triangle'); setTimeout(function () { beep(880, 0.18, 'triangle'); }, 120); if (navigator.vibrate) navigator.vibrate(60); }
+  function sfxTurn() { beep(520, 0.08, 'sine'); }
+  function sfxWin() { beep(784, 0.15, 'triangle'); setTimeout(function () { beep(988, 0.2, 'triangle'); }, 150); if (navigator.vibrate) navigator.vibrate([60, 40, 60]); }
+
+  var sfxTracker = { turn: null, winner: null, pendingRemoval: false, historyLen: 0, ready: false };
+  function maybePlaySfx(st) {
+    if (!sfxTracker.ready) {
+      // first time seeing a state this session: just baseline it, don't play catch-up sounds
+      sfxTracker.turn = st.turn; sfxTracker.winner = st.winner; sfxTracker.pendingRemoval = st.pendingRemoval;
+      sfxTracker.historyLen = st.history ? st.history.length : 0;
+      sfxTracker.ready = true;
+      return;
+    }
+    if (st.history && st.history.length > sfxTracker.historyLen) {
+      var last = st.history[st.history.length - 1] || '';
+      if (last.indexOf('placed') !== -1) sfxPlace();
+      else if (last.indexOf('moved') !== -1) sfxMove();
+    }
+    if (st.pendingRemoval && !sfxTracker.pendingRemoval) sfxMill();
+    if (st.winner && !sfxTracker.winner) sfxWin();
+    else if (st.turn === myRole && sfxTracker.turn !== myRole && !st.winner && !st.pendingRemoval) sfxTurn();
+    sfxTracker.turn = st.turn;
+    sfxTracker.winner = st.winner;
+    sfxTracker.pendingRemoval = st.pendingRemoval;
+    sfxTracker.historyLen = st.history ? st.history.length : 0;
+  }
+
+  // ---- session persistence (reconnect after refresh) ----
+  function saveSession() {
+    try { localStorage.setItem('morris_room', roomCode); localStorage.setItem('morris_role', myRole); } catch (e) {}
+  }
+  function clearSession() {
+    try { localStorage.removeItem('morris_room'); localStorage.removeItem('morris_role'); } catch (e) {}
+  }
+
   async function writeState(st) {
     localState = st;
     render();
+    maybePlaySfx(st);
     if (!supabase) return;
     try {
       await supabase.from('rooms').update({ state: st, updated_at: new Date().toISOString() }).eq('code', roomCode);
@@ -366,11 +540,16 @@
     }
   }
 
+  function updatePresence(role, online) {
+    var dot = role === 'p1' ? p1Presence : p2Presence;
+    if (dot) dot.classList.toggle('online', !!online);
+  }
+
   function subscribeToRoom(code) {
     if (!supabase) return;
     if (channel) supabase.removeChannel(channel);
     channel = supabase
-      .channel('room-' + code)
+      .channel('room-' + code, { config: { presence: { key: myRole } } })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: 'code=eq.' + code }, function (payload) {
         var remote = payload.new.state;
         localState = remote;
@@ -378,8 +557,22 @@
           enterGameView();
         }
         render();
+        maybePlaySfx(remote);
       })
-      .subscribe();
+      .on('presence', { event: 'sync' }, function () {
+        var state = channel.presenceState();
+        ['p1', 'p2'].forEach(function (role) {
+          var online = Object.keys(state).some(function (key) {
+            return state[key].some(function (p) { return p.role === role; });
+          });
+          updatePresence(role, online);
+        });
+      })
+      .subscribe(function (status) {
+        if (status === 'SUBSCRIBED') {
+          channel.track({ role: myRole, online: true });
+        }
+      });
   }
 
   function enterGameView() {
@@ -394,12 +587,15 @@
     createBtn.disabled = true;
     roomCode = genCode();
     myRole = 'p1';
-    var st = freshState();
+    var st = freshState(diagonalsToggle.checked);
+    var name = (createNameInput.value || '').trim();
+    if (name) st.players.p1.name = name.slice(0, 20);
     localState = st;
     try {
       await supabase.from('rooms').insert({ code: roomCode, state: st });
       roomCodeDisplay.textContent = roomCode;
       createdInfo.classList.remove('hidden');
+      saveSession();
       subscribeToRoom(roomCode);
     } catch (err) {
       alert('Could not create the room. Try again.');
@@ -411,6 +607,14 @@
     navigator.clipboard.writeText(roomCode).then(function () {
       copyCodeBtn.textContent = 'Copied';
       setTimeout(function () { copyCodeBtn.textContent = 'Copy code'; }, 1500);
+    });
+  });
+
+  copyLinkBtn.addEventListener('click', function () {
+    var link = window.location.origin + window.location.pathname + '?room=' + roomCode;
+    navigator.clipboard.writeText(link).then(function () {
+      copyLinkBtn.textContent = 'Copied';
+      setTimeout(function () { copyLinkBtn.textContent = 'Copy invite link'; }, 1500);
     });
   });
 
@@ -436,8 +640,12 @@
       }
       st.p2Present = true;
       st.phase = 'placing';
+      var name = (joinNameInput.value || '').trim();
+      st.players = st.players || { p1: { name: null }, p2: { name: null } };
+      if (name) st.players.p2.name = name.slice(0, 20);
       roomCode = code;
       myRole = 'p2';
+      saveSession();
       await writeState(st);
       enterGameView();
       subscribeToRoom(roomCode);
@@ -450,7 +658,9 @@
 
   leaveBtn.addEventListener('click', function () {
     if (channel && supabase) supabase.removeChannel(channel);
-    roomCode = null; myRole = null; localState = null; selected = null;
+    roomCode = null; myRole = null; localState = null; selected = null; prevRenderBoard = null;
+    sfxTracker.ready = false;
+    clearSession();
     gameView.classList.add('hidden');
     lobbyView.classList.remove('hidden');
     createdInfo.classList.add('hidden');
@@ -458,35 +668,125 @@
     joinCodeInput.value = '';
   });
 
+  rematchBtn.addEventListener('click', function () {
+    var st = localState;
+    if (!st || !st.winner) return;
+    if (st.rematchRequestedBy && st.rematchRequestedBy !== myRole) {
+      writeState(startRematch(st));
+    } else {
+      st.rematchRequestedBy = myRole;
+      writeState(st);
+    }
+  });
+
+  reactionsRow.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.reaction-btn') : null;
+    if (!btn || !localState) return;
+    var st = localState;
+    st.reaction = { emoji: btn.getAttribute('data-emoji'), by: myRole, ts: Date.now() };
+    writeState(st);
+  });
+
   function updateScoreboard(st) {
     cardP1.classList.toggle('active', st.turn === 'p1' && !st.winner);
     cardP2.classList.toggle('active', st.turn === 'p2' && !st.winner);
+    p1NameEl.textContent = playerLabel(st, 'p1');
+    p2NameEl.textContent = playerLabel(st, 'p2');
     p1Detail.textContent = st.phase === 'placing'
       ? st.toPlace.p1 + ' to place'
       : st.onBoard.p1 + ' on board' + (canFly(st, 'p1') ? ' \u00b7 flying' : '');
     p2Detail.textContent = st.phase === 'placing'
       ? st.toPlace.p2 + ' to place'
       : st.onBoard.p2 + ' on board' + (canFly(st, 'p2') ? ' \u00b7 flying' : '');
+    scoreDisplay.textContent = 'Score ' + (st.score ? st.score.p1 || 0 : 0) + ' – ' + (st.score ? st.score.p2 || 0 : 0);
   }
 
   function currentStatusText(st) {
-    if (st.winner) return playerName(st.winner) + ' wins!' + (st.winner === myRole ? ' That\'s you.' : '');
+    if (st.winner) return playerLabel(st, st.winner) + ' wins!' + (st.winner === myRole ? ' That\'s you.' : '');
     if (st.phase === 'waiting') return 'Waiting for your partner to join...';
     var myTurn = st.turn === myRole;
     if (st.pendingRemoval) {
-      return myTurn ? 'You formed a mill! Tap an opponent piece to remove it.' : playerName(st.turn) + ' is removing one of your pieces.';
+      return myTurn ? 'You formed a mill! Tap an opponent piece to remove it.' : playerLabel(st, st.turn) + ' is removing one of your pieces.';
     }
-    if (!myTurn) return playerName(st.turn) + '\u2019s turn...';
+    if (!myTurn) return playerLabel(st, st.turn) + '\u2019s turn...';
     if (st.phase === 'placing') return 'Your turn: place a piece on any open point.';
     return 'Your turn: select a piece to move' + (canFly(st, myRole) ? ' (you can fly anywhere).' : '.');
   }
+
+  function renderHistory(st) {
+    var items = (st.history || []).slice(-10).reverse();
+    if (items.length === 0) {
+      historyList.innerHTML = '<li class="history-empty">No moves yet.</li>';
+      return;
+    }
+    historyList.innerHTML = '';
+    items.forEach(function (line) {
+      var li = document.createElement('li');
+      li.textContent = line;
+      historyList.appendChild(li);
+    });
+  }
+
+  function renderReactionToast(st) {
+    if (st.reaction && (Date.now() - st.reaction.ts) < 3200) {
+      reactionToast.textContent = playerLabel(st, st.reaction.by) + ' ' + st.reaction.emoji;
+      reactionToast.classList.remove('hidden');
+      var remaining = 3200 - (Date.now() - st.reaction.ts);
+      if (reactionTimer) clearTimeout(reactionTimer);
+      reactionTimer = setTimeout(render, remaining + 50);
+    } else {
+      reactionToast.classList.add('hidden');
+    }
+  }
+
+  function renderRematch(st) {
+    if (!st.winner) { rematchArea.classList.add('hidden'); return; }
+    rematchArea.classList.remove('hidden');
+    if (st.rematchRequestedBy === myRole) {
+      rematchBtn.disabled = true;
+      rematchBtn.textContent = 'Rematch requested';
+      rematchStatus.textContent = 'Waiting for ' + playerLabel(st, opponent(myRole)) + ' to accept...';
+    } else if (st.rematchRequestedBy) {
+      rematchBtn.disabled = false;
+      rematchBtn.textContent = 'Accept rematch';
+      rematchStatus.textContent = playerLabel(st, st.rematchRequestedBy) + ' wants a rematch.';
+    } else {
+      rematchBtn.disabled = false;
+      rematchBtn.textContent = 'Rematch';
+      rematchStatus.textContent = '';
+    }
+  }
+
+  function updateTurnTimer(st) {
+    if (!st.turnStartedAt || st.winner || st.phase === 'waiting') { turnTimerEl.textContent = ''; return; }
+    var secs = Math.max(0, Math.floor((Date.now() - st.turnStartedAt) / 1000));
+    var m = Math.floor(secs / 60), s = secs % 60;
+    turnTimerEl.textContent = 'Turn ' + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+  setInterval(function () { if (localState) updateTurnTimer(localState); }, 1000);
 
   function render() {
     if (!localState) return;
     var st = localState;
     svg.innerHTML = '';
 
-    EDGES.forEach(function (e) {
+    var poppedPoints = {};
+    if (prevRenderBoard) {
+      Object.keys(st.board).forEach(function (p) {
+        if (st.board[p] && st.board[p] !== prevRenderBoard[p]) poppedPoints[p] = true;
+      });
+    }
+
+    var glowPoints = {};
+    if (st.pendingRemoval) {
+      millsFor(st).forEach(function (m) {
+        if (m.every(function (p) { return st.board[p] === st.turn; })) {
+          m.forEach(function (p) { glowPoints[p] = true; });
+        }
+      });
+    }
+
+    edgesFor(st).forEach(function (e) {
       var a = pixel(e[0]), b = pixel(e[1]);
       svg.appendChild(svgEl('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], class: 'board-edge' }));
     });
@@ -494,9 +794,10 @@
     var myTurn = st.turn === myRole && !st.winner;
     var validTargets = [];
     if (selected && myTurn) {
+      var adj = adjFor(st);
       validTargets = canFly(st, myRole)
         ? emptyPoints(st.board)
-        : ADJ[selected].filter(function (n) { return st.board[n] === null; });
+        : adj[selected].filter(function (n) { return st.board[n] === null; });
     }
 
     Object.keys(POINTS).forEach(function (id) {
@@ -513,32 +814,40 @@
         var classes = 'piece ' + occupant;
         var interactive = false;
         if (st.pendingRemoval && myTurn && occupant === opponent(myRole)) {
-          var removable = !allInMills(st.board, occupant) ? !isMillAt(st.board, id, occupant) : true;
+          var removable = !allInMills(st, st.board, occupant) ? !isMillAt(st, st.board, id, occupant) : true;
           if (removable) { classes += ' removable'; interactive = true; }
         } else if (!st.pendingRemoval && myTurn && st.phase === 'moving' && occupant === myRole) {
           interactive = true;
         }
         if (!interactive) classes += ' locked';
         if (selected === id) classes += ' selected';
+        if (poppedPoints[id]) classes += ' piece-pop';
+        if (glowPoints[id]) classes += ' mill-glow';
         var piece = svgEl('circle', { cx: pos[0], cy: pos[1], r: 15, class: classes });
         piece.addEventListener('click', function () { handlePieceClick(id, occupant); });
         svg.appendChild(piece);
       }
     });
 
+    prevRenderBoard = Object.assign({}, st.board);
+
     updateScoreboard(st);
+    updateTurnTimer(st);
+    renderHistory(st);
+    renderReactionToast(st);
+    renderRematch(st);
     var kind = st.winner ? '' : (st.pendingRemoval ? 'remove' : (st.phase === 'waiting' ? 'wait' : ''));
     setStatus(currentStatusText(st), kind);
   }
 
   function afterMillCheck(st, point, pl) {
-    if (isMillAt(st.board, point, pl)) { st.pendingRemoval = true; return true; }
+    if (isMillAt(st, st.board, point, pl)) { st.pendingRemoval = true; return true; }
     return false;
   }
 
   function checkWin(st) {
     var opp = opponent(st.turn);
-    if (st.phase === 'moving' && st.onBoard[opp] <= 2) { st.winner = st.turn; return true; }
+    if (st.phase === 'moving' && st.onBoard[opp] <= 2) { st.winner = st.turn; bumpScore(st, st.winner); return true; }
     return false;
   }
 
@@ -546,8 +855,15 @@
     if (st.pendingRemoval) return st;
     if (checkWin(st)) return st;
     st.turn = opponent(st.turn);
-    if (st.phase === 'moving' && !hasAnyMove(st, st.turn)) { st.winner = opponent(st.turn); return st; }
+    st.turnStartedAt = Date.now();
+    if (st.phase === 'moving' && !hasAnyMove(st, st.turn)) { st.winner = opponent(st.turn); bumpScore(st, st.winner); return st; }
     return st;
+  }
+
+  function pushHistory(st, line) {
+    st.history = st.history || [];
+    st.history.push(line);
+    if (st.history.length > 40) st.history = st.history.slice(-40);
   }
 
   function handlePointClick(id) {
@@ -559,6 +875,7 @@
       st.board[id] = myRole;
       st.toPlace[myRole] -= 1;
       st.onBoard[myRole] += 1;
+      pushHistory(st, playerLabel(st, myRole) + ' placed at ' + id.toUpperCase());
       var formed = afterMillCheck(st, id, myRole);
       if (st.toPlace.p1 === 0 && st.toPlace.p2 === 0) st.phase = 'moving';
       if (!formed) endTurnUnlessRemoval(st);
@@ -569,13 +886,14 @@
     if (st.phase === 'moving' && selected) {
       var valid = canFly(st, myRole)
         ? st.board[id] === null
-        : ADJ[selected].indexOf(id) !== -1 && st.board[id] === null;
+        : adjFor(st)[selected].indexOf(id) !== -1 && st.board[id] === null;
       if (!valid) return;
       var movedFrom = selected;
       st.board[id] = myRole;
       st.board[movedFrom] = null;
       var movedTo = id;
       selected = null;
+      pushHistory(st, playerLabel(st, myRole) + ' moved ' + movedFrom.toUpperCase() + ' \u2192 ' + movedTo.toUpperCase());
       var formedMove = afterMillCheck(st, movedTo, myRole);
       if (!formedMove) endTurnUnlessRemoval(st);
       writeState(st);
@@ -589,8 +907,9 @@
 
     if (st.pendingRemoval) {
       if (occupant !== opponent(myRole)) return;
-      var removable = !allInMills(st.board, occupant) ? !isMillAt(st.board, id, occupant) : true;
+      var removable = !allInMills(st, st.board, occupant) ? !isMillAt(st, st.board, id, occupant) : true;
       if (!removable) return;
+      pushHistory(st, playerLabel(st, myRole) + ' removed ' + playerLabel(st, occupant) + '\u2019s piece at ' + id.toUpperCase());
       st.board[id] = null;
       st.onBoard[occupant] -= 1;
       st.pendingRemoval = false;
@@ -604,7 +923,41 @@
     render();
   }
 
-  setStatus('Create a game or join one with a code to get started.');
+  // ---- shareable link prefill ----
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var roomParam = params.get('room');
+    if (roomParam) joinCodeInput.value = roomParam.toUpperCase();
+  } catch (e) {}
+
+  // ---- reconnect after refresh ----
+  async function tryReconnect() {
+    if (!supabase) { setStatus('Create a game or join one with a code to get started.'); return; }
+    var savedRoom = null, savedRole = null;
+    try { savedRoom = localStorage.getItem('morris_room'); savedRole = localStorage.getItem('morris_role'); } catch (e) {}
+    if (!savedRoom || !savedRole) { setStatus('Create a game or join one with a code to get started.'); return; }
+    try {
+      var result = await supabase.from('rooms').select('state').eq('code', savedRoom).single();
+      if (result.error || !result.data) { clearSession(); setStatus('Create a game or join one with a code to get started.'); return; }
+      roomCode = savedRoom;
+      myRole = savedRole;
+      localState = result.data.state;
+      subscribeToRoom(roomCode);
+      if (myRole === 'p1' && localState.phase === 'waiting') {
+        roomCodeDisplay.textContent = roomCode;
+        createdInfo.classList.remove('hidden');
+        createBtn.disabled = true;
+      } else {
+        enterGameView();
+      }
+      render();
+    } catch (err) {
+      clearSession();
+      setStatus('Create a game or join one with a code to get started.');
+    }
+  }
+
+  tryReconnect();
 })();
 </script>
 
