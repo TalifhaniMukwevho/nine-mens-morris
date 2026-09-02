@@ -571,8 +571,9 @@
         ? st.board[id] === null
         : ADJ[selected].indexOf(id) !== -1 && st.board[id] === null;
       if (!valid) return;
-      st.board[selected] = myRole;
-      st.board[id] = null;
+      var movedFrom = selected;
+      st.board[id] = myRole;
+      st.board[movedFrom] = null;
       var movedTo = id;
       selected = null;
       var formedMove = afterMillCheck(st, movedTo, myRole);
